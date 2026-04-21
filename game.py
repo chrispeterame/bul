@@ -14,7 +14,7 @@ class GameState:
         self.generate_game()
 
     def generate_game(self):
-        for _ in range(500):
+        for _ in range(100):
             cows = self._generate_cows()
             colors = self._generate_colors(cows)
             if self._has_unique_solution(cows, colors):
@@ -23,7 +23,7 @@ class GameState:
                 self.player_marks = [[None for _ in range(self.n)] for _ in range(self.n)]
                 self.right_marks = [[False for _ in range(self.n)] for _ in range(self.n)]
                 return
-        raise Exception("Failed to generate game after 500 attempts")
+        raise Exception("Failed to generate game after 100 attempts")
 
     def _generate_cows(self) -> List[Tuple[int, int]]:
         def backtrack(row: int, placed: List[Tuple[int, int]]) -> Optional[List[Tuple[int, int]]]:
@@ -60,8 +60,7 @@ class GameState:
         for i, (r, c) in enumerate(cows):
             colors[r][c] = i
         
-        max_iterations = self.n * self.n * 2
-        for _ in range(max_iterations):
+        for _ in range(self.n * self.n):
             colored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] >= 0]
             random.shuffle(colored)
             
@@ -78,18 +77,6 @@ class GameState:
             
             if all(colors[r][c] >= 0 for r in range(self.n) for c in range(self.n)):
                 break
-        
-        uncolored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] == -1]
-        while uncolored:
-            for r, c in uncolored:
-                neighbors = [(r+dr, c+dc) for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)] 
-                             if 0 <= r+dr < self.n and 0 <= c+dc < self.n]
-                random.shuffle(neighbors)
-                for nr, nc in neighbors:
-                    if colors[nr][nc] != -1:
-                        colors[r][c] = colors[nr][nc]
-                        break
-            uncolored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] == -1]
         
         return colors
 
