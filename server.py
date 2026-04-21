@@ -17,7 +17,7 @@ def index():
 def new_game():
     data = request.json
     n = data.get('n', 5)
-    if n < 4 or n > 8:
+    if n < 4 or n > 10:
         n = 5
     
     game_id = secrets.token_hex(8)
