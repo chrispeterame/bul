@@ -1,5 +1,4 @@
 import random
-from collections import deque
 from typing import List, Tuple, Optional, Set
 
 class GameState:
@@ -56,17 +55,18 @@ class GameState:
 
     def _generate_colors(self, cows: List[Tuple[int, int]]) -> List[List[int]]:
         colors = [[-1 for _ in range(self.n)] for _ in range(self.n)]
+        cow_color_map = {cows[i]: i for i in range(self.n)}
         
         for i, (r, c) in enumerate(cows):
             colors[r][c] = i
         
-        for i, (start_r, start_c) in enumerate(cows):
-            queue = deque([(start_r, start_c)])
-            color = i
+        max_iterations = self.n * self.n * 2
+        for _ in range(max_iterations):
+            colored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] >= 0]
+            random.shuffle(colored)
             
-            while queue:
-                r, c = queue.popleft()
-                
+            for r, c in colored:
+                color = colors[r][c]
                 neighbors = [(r+dr, c+dc) for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)] 
                              if 0 <= r+dr < self.n and 0 <= c+dc < self.n]
                 random.shuffle(neighbors)
@@ -74,17 +74,22 @@ class GameState:
                 for nr, nc in neighbors:
                     if colors[nr][nc] == -1:
                         colors[nr][nc] = color
-                        queue.append((nr, nc))
+                        break
+            
+            if all(colors[r][c] >= 0 for r in range(self.n) for c in range(self.n)):
+                break
         
         uncolored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] == -1]
-        if uncolored:
+        while uncolored:
             for r, c in uncolored:
                 neighbors = [(r+dr, c+dc) for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)] 
                              if 0 <= r+dr < self.n and 0 <= c+dc < self.n]
+                random.shuffle(neighbors)
                 for nr, nc in neighbors:
                     if colors[nr][nc] != -1:
                         colors[r][c] = colors[nr][nc]
                         break
+            uncolored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] == -1]
         
         return colors
 
