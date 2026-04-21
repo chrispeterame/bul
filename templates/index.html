@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>找牛小游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-value.errors {
+            color: #e74c3c;
+        }
+
+        .info-value.remaining {
+            color: #27ae60;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .game-grid {
+            display: grid;
+            gap: 3px;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            position: relative;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+
+        .cell.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .cell.cow {
+            background: #f39c12 !important;
+            border-color: #d35400;
+        }
+
+        .cell.wrong {
+            background: #e74c3c !important;
+            border-color: #c0392b;
+        }
+
+        .cell.not-cow {
+            position: relative;
+        }
+
+        .cell.not-cow::before,
+        .cell.not-cow::after {
+            content: '';
+            position: absolute;
+            background: #555;
+            border-radius: 1px;
+        }
+
+        .cell.not-cow::before {
+            width: 30px;
+            height: 3px;
+            transform: rotate(45deg);
+        }
+
+        .cell.not-cow::after {
+            width: 3px;
+            height: 30px;
+            transform: rotate(45deg);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .modal.win h2 {
+            color: #27ae60;
+        }
+
+        .modal.lose h2 {
+            color: #e74c3c;
+        }
+
+        .modal p {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .instructions strong {
+            color: #333;
+        }
+
+        .size-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .size-selector label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .size-selector select {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .size-selector select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 500px) {
+            .cell {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐄 找牛小游戏</h1>
+        
+        <div class="size-selector">
+            <label>难度选择：</label>
+            <select id="gameSize">
+                <option value="4">简单 (4×4)</option>
+                <option value="5" selected>中等 (5×5)</option>
+                <option value="6">困难 (6×6)</option>
+                <option value="7">专家 (7×7)</option>
+                <option value="8">大师 (8×8)</option>
+            </select>
+        </div>
+
+        <div class="instructions">
+            <strong>游戏规则：</strong><br>
+            • <strong>左键点击</strong>：标记牛的位置<br>
+            • <strong>右键点击</strong>：标记不是牛的位置（再点一次撤销）<br>
+            • 每行、每列、每种颜色恰好1头牛<br>
+            • 牛周围8格内没有其他牛<br>
+            • 标记错误3次游戏失败
+        </div>
+
+        <div class="game-info">
+            <div class="info-item">
+                <div class="info-label">错误次数</div>
+                <div class="info-value errors" id="errorCount">0/3</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">剩余牛数</div>
+                <div class="info-value remaining" id="remainingCows">5</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" id="newGameBtn">新游戏</button>
+            <button class="btn-danger" id="revealBtn">显示答案</button>
+        </div>
+
+        <div id="gameGrid" class="game-grid"></div>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">游戏结束</h2>
+            <p id="modalMessage">恭喜你获胜！</p>
+            <button class="btn-primary" id="modalNewGame">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        const COLORS = [
+            '#3498db',
+            '#2ecc71',
+            '#e67e22',
+            '#9b59b6',
+            '#1abc9c',
+            '#f1c40f',
+            '#e74c3c',
+            '#34495e'
+        ];
+
+        let gameId = null;
+        let gridSize = 5;
+        let isGameOver = false;
+
+        const gameGrid = document.getElementById('gameGrid');
+        const errorCount = document.getElementById('errorCount');
+        const remainingCows = document.getElementById('remainingCows');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const revealBtn = document.getElementById('revealBtn');
+        const resultModal = document.getElementById('resultModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalNewGame = document.getElementById('modalNewGame');
+        const gameSizeSelect = document.getElementById('gameSize');
+
+        async function startNewGame() {
+            gridSize = parseInt(gameSizeSelect.value);
+            isGameOver = false;
+            hideModal();
+            
+            try {
+                const response = await fetch('/api/new_game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ n: gridSize })
+                });
+                
+                const data = await response.json();
+                gameId = data.game_id;
+                updateUI(data);
+            } catch (error) {
+                console.error('Error starting game:', error);
+                alert('启动游戏失败，请刷新页面重试');
+            }
+        }
+
+        async function markCow(row, col) {
+            if (isGameOver) return;
+            
+            try {
+                const response = await fetch(`/api/mark_cow/${gameId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ row, col })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    updateUI(data);
+                    if (data.game_over) {
+                        showResult(data.won);
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking cow:', error);
+            }
+        }
+
+        async function markNotCow(row, col) {
+            if (isGameOver) return;
+            
+            try {
+                const response = await fetch(`/api/mark_not_cow/${gameId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ row, col })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    updateUI(data);
+                }
+            } catch (error) {
+                console.error('Error marking not cow:', error);
+            }
+        }
+
+        async function reveal() {
+            if (isGameOver) return;
+            
+            try {
+                const response = await fetch(`/api/reveal/${gameId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    updateUI(data);
+                    isGameOver = true;
+                }
+            } catch (error) {
+                console.error('Error revealing:', error);
+            }
+        }
+
+        function updateUI(data) {
+            const grid = data.grid;
+            gameGrid.style.gridTemplateColumns = `repeat(${gridSize}, 50px)`;
+            gameGrid.innerHTML = '';
+
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.style.backgroundColor = COLORS[grid[r][c].color % COLORS.length];
+
+                    if (grid[r][c].mark === 'cow') {
+                        cell.classList.add('cow');
+                        cell.textContent = '🐄';
+                    } else if (grid[r][c].mark === 'wrong') {
+                        cell.classList.add('wrong');
+                        cell.textContent = '❌';
+                    } else if (grid[r][c].mark === 'not_cow') {
+                        cell.classList.add('not-cow');
+                    }
+
+                    if (grid[r][c].mark) {
+                        cell.classList.add('disabled');
+                    }
+
+                    cell.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (!cell.classList.contains('disabled')) {
+                            markCow(r, c);
+                        }
+                    });
+
+                    cell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        if (!cell.classList.contains('disabled')) {
+                            markNotCow(r, c);
+                        }
+                    });
+
+                    gameGrid.appendChild(cell);
+                }
+            }
+
+            if (data.errors !== undefined) {
+                errorCount.textContent = `${data.errors}/3`;
+            }
+            if (data.remaining_cows !== undefined) {
+                remainingCows.textContent = data.remaining_cows;
+            }
+        }
+
+        function showResult(won) {
+            isGameOver = true;
+            resultModal.classList.add('show');
+            resultModal.className = 'modal show ' + (won ? 'win' : 'lose');
+            modalTitle.textContent = won ? '🎉 恭喜获胜！' : '💔 游戏失败';
+            modalMessage.textContent = won ? 
+                '你成功找到了所有的牛！' : 
+                '错误次数过多，游戏结束。';
+        }
+
+        function hideModal() {
+            resultModal.classList.remove('show');
+        }
+
+        newGameBtn.addEventListener('click', startNewGame);
+        revealBtn.addEventListener('click', reveal);
+        modalNewGame.addEventListener('click', () => {
+            hideModal();
+            startNewGame();
+        });
+
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('.cell')) {
+                e.preventDefault();
+            }
+        });
+
+        startNewGame();
+    </script>
+</body>
+</html>
