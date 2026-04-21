@@ -1,4 +1,5 @@
 import random
+from collections import deque
 from typing import List, Tuple, Optional, Set
 
 class GameState:
@@ -14,7 +15,7 @@ class GameState:
         self.generate_game()
 
     def generate_game(self):
-        for _ in range(100):
+        for _ in range(500):
             cows = self._generate_cows()
             colors = self._generate_colors(cows)
             if self._has_unique_solution(cows, colors):
@@ -23,7 +24,7 @@ class GameState:
                 self.player_marks = [[None for _ in range(self.n)] for _ in range(self.n)]
                 self.right_marks = [[False for _ in range(self.n)] for _ in range(self.n)]
                 return
-        raise Exception("Failed to generate game after 100 attempts")
+        raise Exception("Failed to generate game after 500 attempts")
 
     def _generate_cows(self) -> List[Tuple[int, int]]:
         def backtrack(row: int, placed: List[Tuple[int, int]]) -> Optional[List[Tuple[int, int]]]:
@@ -55,17 +56,17 @@ class GameState:
 
     def _generate_colors(self, cows: List[Tuple[int, int]]) -> List[List[int]]:
         colors = [[-1 for _ in range(self.n)] for _ in range(self.n)]
-        cow_color_map = {cows[i]: i for i in range(self.n)}
         
         for i, (r, c) in enumerate(cows):
             colors[r][c] = i
         
-        for _ in range(self.n * self.n):
-            colored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] >= 0]
-            random.shuffle(colored)
+        for i, (start_r, start_c) in enumerate(cows):
+            queue = deque([(start_r, start_c)])
+            color = i
             
-            for r, c in colored:
-                color = colors[r][c]
+            while queue:
+                r, c = queue.popleft()
+                
                 neighbors = [(r+dr, c+dc) for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)] 
                              if 0 <= r+dr < self.n and 0 <= c+dc < self.n]
                 random.shuffle(neighbors)
@@ -73,10 +74,17 @@ class GameState:
                 for nr, nc in neighbors:
                     if colors[nr][nc] == -1:
                         colors[nr][nc] = color
+                        queue.append((nr, nc))
+        
+        uncolored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] == -1]
+        if uncolored:
+            for r, c in uncolored:
+                neighbors = [(r+dr, c+dc) for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)] 
+                             if 0 <= r+dr < self.n and 0 <= c+dc < self.n]
+                for nr, nc in neighbors:
+                    if colors[nr][nc] != -1:
+                        colors[r][c] = colors[nr][nc]
                         break
-            
-            if all(colors[r][c] >= 0 for r in range(self.n) for c in range(self.n)):
-                break
         
         return colors
 
