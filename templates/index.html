@@ -451,20 +451,18 @@
                     if (grid[r][c].mark === 'cow') {
                         cell.classList.add('cow');
                         cell.textContent = '🐄';
+                        cell.classList.add('disabled');
                     } else if (grid[r][c].mark === 'wrong') {
                         cell.classList.add('wrong');
                         cell.textContent = '❌';
+                        cell.classList.add('disabled');
                     } else if (grid[r][c].mark === 'not_cow') {
                         cell.classList.add('not-cow');
                     }
 
-                    if (grid[r][c].mark) {
-                        cell.classList.add('disabled');
-                    }
-
                     cell.addEventListener('click', (e) => {
                         e.preventDefault();
-                        if (!cell.classList.contains('disabled')) {
+                        if (!cell.classList.contains('disabled') && grid[r][c].mark !== 'not_cow') {
                             markCow(r, c);
                         }
                     });
