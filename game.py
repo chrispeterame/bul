@@ -69,27 +69,24 @@ class GameState:
     def _generate_colors(self, cows: List[Tuple[int, int]]) -> List[List[int]]:
         colors = [[-1 for _ in range(self.n)] for _ in range(self.n)]
         
+        from collections import deque
+        queue = deque()
+        
         for i, (r, c) in enumerate(cows):
             colors[r][c] = i
+            queue.append((r, c, i))
         
-        for _ in range(self.n * self.n * 2):
-            colored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] >= 0]
-            random.shuffle(colored)
+        while queue:
+            r, c, color = queue.popleft()
             
-            new_colored = []
-            for r, c in colored:
-                color = colors[r][c]
-                neighbors = [(r+dr, c+dc) for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)] 
-                             if 0 <= r+dr < self.n and 0 <= c+dc < self.n]
-                random.shuffle(neighbors)
-                
-                for nr, nc in neighbors:
-                    if colors[nr][nc] == -1:
-                        colors[nr][nc] = color
-                        new_colored.append((nr, nc))
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+            random.shuffle(directions)
             
-            if all(colors[r][c] >= 0 for r in range(self.n) for c in range(self.n)):
-                break
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < self.n and 0 <= nc < self.n and colors[nr][nc] == -1:
+                    colors[nr][nc] = color
+                    queue.append((nr, nc, color))
         
         return colors
 
@@ -112,9 +109,6 @@ class GameState:
         
         colors_list = list(color_cells.keys())
         colors_list.sort()
-        
-        if len(colors_list) != self.n:
-            return []
         
         def backtrack(color_idx: int, placed: Set[Tuple[int, int]], 
                      used_rows: Set[int], used_cols: Set[int]):
