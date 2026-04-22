@@ -55,7 +55,6 @@ class GameState:
 
     def _generate_colors(self, cows: List[Tuple[int, int]]) -> List[List[int]]:
         colors = [[-1 for _ in range(self.n)] for _ in range(self.n)]
-        cow_color_map = {cows[i]: i for i in range(self.n)}
         
         for i, (r, c) in enumerate(cows):
             colors[r][c] = i
