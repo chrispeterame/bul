@@ -14,7 +14,7 @@ class GameState:
         self.generate_game()
 
     def generate_game(self):
-        for _ in range(500):
+        for _ in range(100):
             cows = self._generate_cows()
             if not cows:
                 continue
@@ -23,13 +23,13 @@ class GameState:
             if not self._is_colors_complete(colors):
                 continue
             
-            if self._has_unique_solution(cows, colors):
+            if self._is_valid_solution(cows, colors):
                 self.cows = cows
                 self.colors = colors
                 self.player_marks = [[None for _ in range(self.n)] for _ in range(self.n)]
                 self.right_marks = [[False for _ in range(self.n)] for _ in range(self.n)]
                 return
-        raise Exception("Failed to generate game after 500 attempts")
+        raise Exception("Failed to generate game after 100 attempts")
     
     def _is_colors_complete(self, colors: List[List[int]]) -> bool:
         for r in range(self.n):
@@ -37,6 +37,30 @@ class GameState:
                 if colors[r][c] < 0:
                     return False
         return True
+    
+    def _is_valid_solution(self, cows: List[Tuple[int, int]], colors: List[List[int]]) -> bool:
+        color_count = {}
+        used_rows = set()
+        used_cols = set()
+        
+        for r, c in cows:
+            if r in used_rows or c in used_cols:
+                return False
+            used_rows.add(r)
+            used_cols.add(c)
+            
+            color = colors[r][c]
+            if color in color_count:
+                return False
+            color_count[color] = True
+        
+        for i, (r1, c1) in enumerate(cows):
+            for j, (r2, c2) in enumerate(cows):
+                if i != j:
+                    if abs(r1 - r2) <= 1 and abs(c1 - c2) <= 1:
+                        return False
+        
+        return len(color_count) == self.n
 
     def _generate_cows(self) -> List[Tuple[int, int]]:
         def backtrack(row: int, placed: List[Tuple[int, int]]) -> Optional[List[Tuple[int, int]]]:
