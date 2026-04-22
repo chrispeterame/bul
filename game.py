@@ -14,16 +14,29 @@ class GameState:
         self.generate_game()
 
     def generate_game(self):
-        for _ in range(100):
+        for _ in range(500):
             cows = self._generate_cows()
+            if not cows:
+                continue
+            
             colors = self._generate_colors(cows)
+            if not self._is_colors_complete(colors):
+                continue
+            
             if self._has_unique_solution(cows, colors):
                 self.cows = cows
                 self.colors = colors
                 self.player_marks = [[None for _ in range(self.n)] for _ in range(self.n)]
                 self.right_marks = [[False for _ in range(self.n)] for _ in range(self.n)]
                 return
-        raise Exception("Failed to generate game after 100 attempts")
+        raise Exception("Failed to generate game after 500 attempts")
+    
+    def _is_colors_complete(self, colors: List[List[int]]) -> bool:
+        for r in range(self.n):
+            for c in range(self.n):
+                if colors[r][c] < 0:
+                    return False
+        return True
 
     def _generate_cows(self) -> List[Tuple[int, int]]:
         def backtrack(row: int, placed: List[Tuple[int, int]]) -> Optional[List[Tuple[int, int]]]:
@@ -55,15 +68,15 @@ class GameState:
 
     def _generate_colors(self, cows: List[Tuple[int, int]]) -> List[List[int]]:
         colors = [[-1 for _ in range(self.n)] for _ in range(self.n)]
-        cow_color_map = {cows[i]: i for i in range(self.n)}
         
         for i, (r, c) in enumerate(cows):
             colors[r][c] = i
         
-        for _ in range(self.n * self.n):
+        for _ in range(self.n * self.n * 2):
             colored = [(r, c) for r in range(self.n) for c in range(self.n) if colors[r][c] >= 0]
             random.shuffle(colored)
             
+            new_colored = []
             for r, c in colored:
                 color = colors[r][c]
                 neighbors = [(r+dr, c+dc) for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)] 
@@ -73,7 +86,7 @@ class GameState:
                 for nr, nc in neighbors:
                     if colors[nr][nc] == -1:
                         colors[nr][nc] = color
-                        break
+                        new_colored.append((nr, nc))
             
             if all(colors[r][c] >= 0 for r in range(self.n) for c in range(self.n)):
                 break
@@ -91,12 +104,17 @@ class GameState:
         for r in range(self.n):
             for c in range(self.n):
                 color = colors[r][c]
+                if color < 0:
+                    continue
                 if color not in color_cells:
                     color_cells[color] = []
                 color_cells[color].append((r, c))
         
         colors_list = list(color_cells.keys())
         colors_list.sort()
+        
+        if len(colors_list) != self.n:
+            return []
         
         def backtrack(color_idx: int, placed: Set[Tuple[int, int]], 
                      used_rows: Set[int], used_cols: Set[int]):
